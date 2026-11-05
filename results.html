@@ -36,8 +36,8 @@
       <h2>Value × Effort heat map</h2>
       <div class="sub" id="heatSub">
         Bubble = use case · Size = number of votes<br>
-        Value = voted by the audience · Effort = set by us<br>
-        Top-right (high value + high effort today) = do first
+        Value = voted by the audience · Effort to activate = set by us (1 easy, 5 hard)<br>
+        Top-left (high value, easy to activate) = do first
       </div>
       <div id="heatHost"><div class="hm-empty" id="hmEmpty">Waiting for the first responses…</div></div>
     </div>
@@ -45,7 +45,7 @@
     <!-- Priority list -->
     <div class="card-panel">
       <h2>Priority ranking</h2>
-      <div class="sub">Ranked by value × effort today. Highest first.</div>
+      <div class="sub">Ranked by average business value only. Highest first.</div>
       <div class="prio-list" id="prioList"></div>
     </div>
   </div>
@@ -106,17 +106,17 @@
 
     host.innerHTML = `
       <svg id="heatmap" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <rect x="${midX}" y="${m.t}" width="${W-m.r-midX}" height="${midY-m.t}" fill="#35d6a4" fill-opacity="0.09"/>
-        <rect x="${m.l}" y="${m.t}" width="${midX-m.l}" height="${midY-m.t}" fill="#ffb020" fill-opacity="0.05"/>
+        <rect x="${m.l}" y="${m.t}" width="${midX-m.l}" height="${midY-m.t}" fill="#35d6a4" fill-opacity="0.09"/>
+        <rect x="${midX}" y="${m.t}" width="${W-m.r-midX}" height="${midY-m.t}" fill="#ffb020" fill-opacity="0.05"/>
         <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1"/>
         <line x1="${m.l}" y1="${H-m.b}" x2="${W-m.r}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1"/>
         <line x1="${midX}" y1="${m.t}" x2="${midX}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4"/>
         <line x1="${m.l}" y1="${midY}" x2="${W-m.r}" y2="${midY}" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4"/>
-        <text x="${(midX+W-m.r)/2}" y="${m.t+16}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="#35d6a4" opacity="0.95">DO FIRST</text>
-        <text x="${(m.l+midX)/2}" y="${m.t+16}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="#ffb020" opacity="0.9">NICE TO HAVE</text>
-        <text x="${(m.l+midX)/2}" y="${H-m.b-8}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="var(--mist)">IGNORE</text>
-        <text x="${(midX+W-m.r)/2}" y="${H-m.b-8}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="var(--mist)">MAYBE</text>
-        <text x="${(m.l+W-m.r)/2}" y="${H-14}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="13" font-weight="700" fill="var(--ink-soft)">${esc((scaleX && scaleX.label || 'Effort today').toUpperCase())}  →</text>
+        <text x="${(m.l+midX)/2}" y="${m.t+16}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="#35d6a4" opacity="0.95">DO FIRST</text>
+        <text x="${(midX+W-m.r)/2}" y="${m.t+16}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="#ffb020" opacity="0.9">BIG BETS</text>
+        <text x="${(m.l+midX)/2}" y="${H-m.b-8}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="var(--mist)">NICE TO HAVE</text>
+        <text x="${(midX+W-m.r)/2}" y="${H-m.b-8}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="var(--mist)">DEPRIORITISE</text>
+        <text x="${(m.l+W-m.r)/2}" y="${H-14}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="13" font-weight="700" fill="var(--ink-soft)">${esc((scaleX && scaleX.label || 'Effort to activate (1 easy · 5 hard)').toUpperCase())}  →</text>
         <text x="18" y="${(m.t+H-m.b)/2}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="13" font-weight="700" fill="var(--ink-soft)" transform="rotate(-90 18 ${(m.t+H-m.b)/2})">${esc((scaleY && scaleY.label || 'Value').toUpperCase())}  →</text>
         ${bubbles}
         ${labels}
@@ -231,12 +231,12 @@
       <text x="${leftX + pad}" y="${pad + 22}" font-family="${SYS}" font-weight="700" font-size="22" letter-spacing="1" fill="${ink}">VALUE × EFFORT HEAT MAP</text>
       <text x="${leftX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Bubble = item</text>
       <text x="${leftX + pad}" y="${pad + 70}" font-family="${SYS}" font-size="13" fill="${mist}">Size = number of responses</text>
-      <text x="${leftX + pad}" y="${pad + 90}" font-family="${SYS}" font-size="13" fill="${mist}">Top-right (high value + high effort today) = do first</text>`;
+      <text x="${leftX + pad}" y="${pad + 90}" font-family="${SYS}" font-size="13" fill="${mist}">Top-left (high value, easy to activate) = do first</text>`;
 
     const rightHeader = `
       <rect x="${rightX}" y="${pad}" width="${rightW}" height="${panelH}" rx="18" fill="${panel}" stroke="${line}" stroke-width="1.5"/>
       <text x="${rightX + pad}" y="${pad + 22}" font-family="${SYS}" font-weight="700" font-size="22" letter-spacing="1" fill="${ink}">PRIORITY RANKING</text>
-      <text x="${rightX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Auto-ranked by value × effort today. Highest first.</text>`;
+      <text x="${rightX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Ranked by average business value only. Highest first.</text>`;
 
     const rowsSvg = ranked.map((x, i) => {
       const y = rowsTop + i * (rowH + rowGap);
