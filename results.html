@@ -1,3 +1,81 @@
+Claude
+Searched files, read 2 files
+I found no sensitive data in the files. There are no passwords, admin PINs, private keys, emails, or customer content. The app stores no names, only anonymous ratings. items.js, scoring.js and the HTML files are clean, and the text is generic placeholder content.
+
+Two things to know
+
+Firebase config. The apiKey, projectId and the other fields are public by design, so they’re fine to publish. The project ID givaudan-feedback does put the customer name in a public URL. If that engagement is confidential, consider a neutral project name.
+A real bug in config.js. baseUrl is https://github.com/gbecker1/feedback-framework. It should be https://gbecker1.github.io/feedback-framework/ with the trailing slash. Otherwise your QR codes and links point at the repo, not the live site.
+I need to correct my earlier rules. I assumed one write per entry. Your app saves to feedback/{item}/responses/{anonId}. My !data.exists rule sat at the item level, so after the first vote on an item, everyone else would have been blocked. Use these rules instead:
+
+{
+  "rules": {
+    "feedback": {
+      ".read": true,
+      "$item": {
+        "responses": {
+          "$anon": {
+            ".write": "newData.exists()",
+            ".validate": "newData.hasChildren(['value','effort'])",
+            "value":  { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5" },
+            "effort": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 5" }
+          }
+        }
+      }
+    },
+    "$other": { ".read": false, ".write": false }
+  }
+}
+This allows adding or updating a response with valid 1–5 ratings, and blocks deleting and writing to other paths. Resets must now be done from the Firebase console. If submitting fails after you publish, tell me the error and I’ll adjust.
+
+If you move the files up out of the nested folder as I described earlier, I can also check that nothing else points at the old paths.
+
+no I will keep what I had earlier
+
+Fine, it’s your call. Your earlier rules work: the app can read and write, and everything outside feedback is blocked.
+
+The trade-off is that anyone who has the site URL can read, change or delete any response, including votes from other people. If this is a one-off session with non-sensitive ratings, that’s acceptable. After the session, either set the rules to ".write": false or delete the Firebase project.
+
+One fix is still needed whichever rules you use. Change baseUrl in config.js to https://gbecker1.github.io/feedback-framework/, with the trailing slash. Otherwise your QR codes and links will point at the GitHub repo and not your live site.
+
+Now could you update the content I would like to collect only the business value score between 1 to 5, and I want 12 score/Use cases. I will add a screenshot for each of this use cases
+
+Read 5 files, ran 2 commands, and 2 more tools
+I’ve updated four files for a single 1–5 business value score across 12 use cases. I only syntax-checked them, so I haven’t loaded the pages in a browser.
+
+Replace these in your repo:
+
+js/config.js and js/scoring.js
+feedback.html and results.html at the top level
+What changed:
+
+Form: It asks one question, “Business value”, scored 1 to 5. The effort question and the chip questions are gone.
+Use cases: There are 12 (UC01 to UC12), all still called “Use case 1”, “Use case 2” and so on. Edit the title and lead of each in js/config.js.
+Screenshots: Each use case shows its image under the title. Tapping the image opens it full size.
+Results page: The heat map is now a bar chart of average value per use case with vote counts. The ranking sorts by average value, and the CSV and PNG exports match.
+baseUrl: I set it to https://gbecker1.github.io/feedback-framework/, which fixes the QR/link issue I mentioned.
+Your part: Save your screenshots in the img/ folder as uc01.png through uc12.png. The names must be lowercase and use .png, because GitHub is case-sensitive. If you use .jpg, change the extension in config.js.
+
+Your Firebase rules don’t need to change.
+
+
+Config
+JS 
+
+Scoring
+JS 
+
+Feedback
+Code·HTML 
+
+Results
+Code·HTML 
+
+could you push on
+
+
+
+Results · HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,13 +86,13 @@
 <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body>
-
+ 
 <div class="topbar" id="topbar"></div>
-
+ 
 <div class="preview-banner" id="previewBanner">
   ⚠️ Local preview mode — showing only feedback saved in this browser (Firebase not configured yet).
 </div>
-
+ 
 <div class="results-wrap">
   <div class="res-head">
     <div>
@@ -26,101 +104,84 @@
       <button type="button" id="pngBtn">⬇ Results image</button>
     </div>
   </div>
-
+ 
   <div class="res-stats" id="stats"></div>
-
+ 
   <div class="res-grid">
     <!-- Heat map -->
     <div class="card-panel">
-      <h2>Value × Effort heat map</h2>
+      <h2>Average business value</h2>
       <div class="sub" id="heatSub">
-        Bubble = item · Size = number of responses<br>
-        Top-right (high value + high effort today) = do first
+        Average score (1 to 5) per use case · n = number of votes
       </div>
       <div id="heatHost"><div class="hm-empty" id="hmEmpty">Waiting for the first responses…</div></div>
     </div>
-
+ 
     <!-- Priority list -->
     <div class="card-panel">
       <h2>Priority ranking</h2>
-      <div class="sub">Ranked by value × effort today. Highest first.</div>
+      <div class="sub">Ranked by average business value. Highest first.</div>
       <div class="prio-list" id="prioList"></div>
     </div>
   </div>
 </div>
-
+ 
 <script type="module">
   import cfg from "./js/config.js";
   import { ITEMS, CATEGORIES, stripPrefix, categoryOf } from "./js/items.js";
   import { summarise, rankItems, tallyField } from "./js/scoring.js";
   import { watchFeedback, getAllFeedback, isConfigured } from "./js/db.js";
   import { initChrome } from "./js/theme.js";
-
+ 
   initChrome({ home: "results.html" });
   document.getElementById('eyebrow').textContent = cfg.brand.tagline || 'Live feedback';
-
+ 
   if (!isConfigured) document.getElementById('previewBanner').classList.add('show');
-
+ 
   const HEAD_FONT = (cfg.brand.fonts && cfg.brand.fonts.heading && cfg.brand.fonts.heading.family) || 'sans-serif';
   const scaleY = cfg.questions.scales[0];   // value axis
   const scaleX = cfg.questions.scales[1];    // effort axis
   const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
+ 
   let latestRanked = [];  // kept for the image export
-
+ 
   function render(map) {
     const rows = ITEMS.map(item => ({ item, resp: map[item.id] || [] }));
     const totalResponses = rows.reduce((n, r) => n + r.resp.length, 0);
     const itemsRated = rows.filter(r => r.resp.length).length;
-
+ 
     document.getElementById('stats').innerHTML = `
       <div class="res-stat"><div class="n">${totalResponses}</div><div class="l">Responses</div></div>
-      <div class="res-stat"><div class="n">${itemsRated}/${ITEMS.length}</div><div class="l">Items rated</div></div>`;
-
+      <div class="res-stat"><div class="n">${itemsRated}/${ITEMS.length}</div><div class="l">Use cases rated</div></div>`;
+ 
     renderHeatmap(rows);
     renderPriority(rows);
   }
-
-  // ---- heat map (2×2 SVG bubble matrix) ----
+ 
+  // ---- bar chart: average value per use case ----
   function renderHeatmap(rows) {
     const host = document.getElementById('heatHost');
-    const rated = rows.filter(r => r.resp.length && summarise(r.resp).count);
-    if (!rated.length) { host.innerHTML = '<div class="hm-empty">Waiting for the first responses…</div>'; return; }
+    if (!rows.some(r => r.resp.length)) { host.innerHTML = '<div class="hm-empty">Waiting for the first responses…</div>'; return; }
     const max = cfg.questions.scaleMax;
-    const W = 560, H = 460, m = { l: 64, r: 24, t: 24, b: 56 };
-    const px = (e) => m.l + (e - 1) / (max - 1) * (W - m.l - m.r);
-    const py = (v) => (H - m.b) - (v - 1) / (max - 1) * (H - m.t - m.b);
-    const midX = px((1 + max) / 2), midY = py((1 + max) / 2);
-
-    let bubbles = '', labels = '';
-    rated.forEach(r => {
+    const rowH = 34, W = 560, m = { l: 48, r: 70, t: 16, b: 34 };
+    const H = m.t + m.b + rows.length * rowH;
+    const px = (v) => m.l + (v / max) * (W - m.l - m.r);
+    let grid = '', bars = '';
+    for (let i = 0; i <= max; i++) {
+      grid += `<line x1="${px(i)}" y1="${m.t}" x2="${px(i)}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1"/>` +
+              `<text x="${px(i)}" y="${H-m.b+18}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" fill="var(--mist)">${i}</text>`;
+    }
+    rows.forEach((r, i) => {
       const s = summarise(r.resp);
-      const cx = px(s.avgE), cy = py(s.avgV);
-      const rad = 12 + Math.min(26, s.count * 4);
-      const col = categoryOf(r.item).solid;
-      bubbles += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${rad}" fill="${col}" fill-opacity="0.32" stroke="${col}" stroke-width="2"/>`;
-      labels += `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="${HEAD_FONT}, sans-serif" font-weight="700" font-size="14" fill="var(--ink)">${esc(stripPrefix(r.item.id))}</text>`;
+      const y = m.t + i * rowH, col = categoryOf(r.item).solid;
+      const w = Math.max(0, px(s.avgV) - m.l);
+      bars += `<text x="${m.l-10}" y="${y+rowH/2}" text-anchor="end" dominant-baseline="central" font-family="${HEAD_FONT}" font-weight="700" font-size="14" fill="var(--ink)">${esc(stripPrefix(r.item.id))}</text>` +
+              (s.count ? `<rect x="${m.l}" y="${y+6}" width="${w.toFixed(1)}" height="${rowH-12}" rx="5" fill="${col}" fill-opacity="0.75"/>` : '') +
+              `<text x="${(s.count ? px(s.avgV) : m.l) + 8}" y="${y+rowH/2}" dominant-baseline="central" font-family="${HEAD_FONT}" font-size="13" font-weight="700" fill="var(--ink-soft)">${s.count ? s.avgV.toFixed(1) + '  (n=' + s.count + ')' : '–'}</text>`;
     });
-
-    host.innerHTML = `
-      <svg id="heatmap" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
-        <rect x="${midX}" y="${m.t}" width="${W-m.r-midX}" height="${midY-m.t}" fill="#35d6a4" fill-opacity="0.09"/>
-        <rect x="${m.l}" y="${m.t}" width="${midX-m.l}" height="${midY-m.t}" fill="#ffb020" fill-opacity="0.05"/>
-        <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1"/>
-        <line x1="${m.l}" y1="${H-m.b}" x2="${W-m.r}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1"/>
-        <line x1="${midX}" y1="${m.t}" x2="${midX}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4"/>
-        <line x1="${m.l}" y1="${midY}" x2="${W-m.r}" y2="${midY}" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4"/>
-        <text x="${(midX+W-m.r)/2}" y="${m.t+16}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="#35d6a4" opacity="0.95">DO FIRST</text>
-        <text x="${(m.l+midX)/2}" y="${m.t+16}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="#ffb020" opacity="0.9">NICE TO HAVE</text>
-        <text x="${(m.l+midX)/2}" y="${H-m.b-8}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="var(--mist)">IGNORE</text>
-        <text x="${(midX+W-m.r)/2}" y="${H-m.b-8}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="var(--mist)">MAYBE</text>
-        <text x="${(m.l+W-m.r)/2}" y="${H-14}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="13" font-weight="700" fill="var(--ink-soft)">${esc((scaleX && scaleX.label || 'Effort').toUpperCase())}  →</text>
-        <text x="18" y="${(m.t+H-m.b)/2}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="13" font-weight="700" fill="var(--ink-soft)" transform="rotate(-90 18 ${(m.t+H-m.b)/2})">${esc((scaleY && scaleY.label || 'Value').toUpperCase())}  →</text>
-        ${bubbles}
-        ${labels}
-      </svg>`;
+    host.innerHTML = `<svg id="heatmap" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${grid}${bars}</svg>`;
   }
-
+ 
   // ---- priority ranking ----
   function renderPriority(rows) {
     const ranked = rankItems(rows);
@@ -135,13 +196,13 @@
         <div class="snum" style="background:${categoryOf(x.item).grad}">${esc(stripPrefix(x.item.id))}</div>
         <div class="pbody">
           <h3>${esc(x.item.title)}</h3>
-          <div class="meta">${esc(x.item.id)} · value ${x.s.avgV.toFixed(1)} · effort ${x.s.avgE.toFixed(1)} · <b>${x.s.count} vote${x.s.count === 1 ? '' : 's'}</b>${thin}</div>
+          <div class="meta">${esc(x.item.id)} · avg value ${x.s.avgV.toFixed(1)} · <b>${x.s.count} vote${x.s.count === 1 ? '' : 's'}</b>${thin}</div>
         </div>
         <div class="score">${x.s.score.toFixed(1)}<small>SCORE</small></div>
       </div>`;
     }).join('');
   }
-
+ 
   // ====================== EXPORT ======================
   function csvCell(v) {
     const s = String(v == null ? '' : v);
@@ -153,45 +214,44 @@
     a.href = URL.createObjectURL(blob); a.download = filename; a.click();
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
-
+ 
   const topList = (resp, field) => Object.entries(tallyField(resp, field))
     .sort((a, b) => b[1] - a[1]).map(([k, n]) => `${k} (${n})`).join('; ');
-
+ 
   async function exportCsv() {
     const map = await getAllFeedback();
     const rows = ITEMS.map(item => ({ item, resp: map[item.id] || [] }));
     const chipKeys = cfg.questions.chipGroups.map(g => g.key);
-
+ 
     let out = 'SUMMARY\n';
-    out += ['Id', 'Title', 'Category', 'Responses', 'Avg value', 'Avg effort', 'Priority score',
+    out += ['Id', 'Title', 'Category', 'Responses', 'Avg value',
             ...chipKeys.map(k => 'Top ' + k)].map(csvCell).join(',') + '\n';
     rows.forEach(({ item, resp }) => {
       const s = summarise(resp);
       out += [item.id, item.title, categoryOf(item).label, s.count,
-              s.count ? s.avgV.toFixed(2) : '', s.count ? s.avgE.toFixed(2) : '',
-              s.count ? s.score.toFixed(2) : '',
+              s.count ? s.avgV.toFixed(2) : '',
               ...chipKeys.map(k => topList(resp, k))].map(csvCell).join(',') + '\n';
     });
-
+ 
     out += '\nRAW RESPONSES\n';
-    out += ['Id', 'Title', 'Value', 'Effort', ...chipKeys, 'Submitted'].map(csvCell).join(',') + '\n';
+    out += ['Id', 'Title', 'Value', ...chipKeys, 'Submitted'].map(csvCell).join(',') + '\n';
     rows.forEach(({ item, resp }) => {
       resp.forEach(r => {
         const when = r.submittedAt ? new Date(r.submittedAt).toISOString() : '';
-        out += [item.id, item.title, r.value || '', r.effort || '',
+        out += [item.id, item.title, r.value || '',
                 ...chipKeys.map(k => (r[k] || []).join('; ')), when].map(csvCell).join(',') + '\n';
       });
     });
-
+ 
     download(cfg.export.csvName, out, 'text/csv;charset=utf-8');
   }
-
+ 
   const xmlEsc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-
+ 
   function exportPng() {
     const svg = document.getElementById('heatmap');
     if (!svg) { alert('No heat map to export yet — wait for responses.'); return; }
-
+ 
     const SYS = "Arial, Helvetica, sans-serif";
     const cs = getComputedStyle(document.body);
     const cvar = (name, fallback) => (cs.getPropertyValue(name).trim() || fallback);
@@ -203,14 +263,14 @@
       });
       if (el.hasAttribute('font-family')) el.setAttribute('font-family', SYS);
     });
-
+ 
     const panel  = cvar('--steel-2', '#151b25');
     const steel3 = cvar('--steel-3', '#1b2230');
     const line   = cvar('--line', 'rgba(255,255,255,0.09)');
     const mist   = cvar('--mist', '#828e9f');
     const ink    = cvar('--ink', '#eef2f8');
     const accent = cvar('--molten-2', '#60a5fa');
-
+ 
     const vb = svg.viewBox.baseVal, cw = vb.width, ch = vb.height;
     const pad = 28, gap = 24, headerH = 118, scale = 2;
     const leftW = cw + pad * 2;
@@ -223,19 +283,19 @@
     const H = pad * 2 + panelH;
     const leftX = pad, rightX = pad + leftW + gap;
     const chartX = leftX + pad, chartY = pad + headerH;
-
+ 
     const leftHeader = `
       <rect x="${leftX}" y="${pad}" width="${leftW}" height="${panelH}" rx="18" fill="${panel}" stroke="${line}" stroke-width="1.5"/>
-      <text x="${leftX + pad}" y="${pad + 22}" font-family="${SYS}" font-weight="700" font-size="22" letter-spacing="1" fill="${ink}">VALUE × EFFORT HEAT MAP</text>
-      <text x="${leftX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Bubble = item</text>
-      <text x="${leftX + pad}" y="${pad + 70}" font-family="${SYS}" font-size="13" fill="${mist}">Size = number of responses</text>
-      <text x="${leftX + pad}" y="${pad + 90}" font-family="${SYS}" font-size="13" fill="${mist}">Top-right (high value + high effort today) = do first</text>`;
-
+      <text x="${leftX + pad}" y="${pad + 22}" font-family="${SYS}" font-weight="700" font-size="22" letter-spacing="1" fill="${ink}">AVERAGE BUSINESS VALUE</text>
+      <text x="${leftX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Average score (1 to 5) per use case</text>
+      <text x="${leftX + pad}" y="${pad + 70}" font-family="${SYS}" font-size="13" fill="${mist}">n = number of votes</text>
+`;
+ 
     const rightHeader = `
       <rect x="${rightX}" y="${pad}" width="${rightW}" height="${panelH}" rx="18" fill="${panel}" stroke="${line}" stroke-width="1.5"/>
       <text x="${rightX + pad}" y="${pad + 22}" font-family="${SYS}" font-weight="700" font-size="22" letter-spacing="1" fill="${ink}">PRIORITY RANKING</text>
-      <text x="${rightX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Auto-ranked by value × effort today. Highest first.</text>`;
-
+      <text x="${rightX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Ranked by average business value. Highest first.</text>`;
+ 
     const rowsSvg = ranked.map((x, i) => {
       const y = rowsTop + i * (rowH + rowGap);
       const rx = rightX + pad;
@@ -250,11 +310,11 @@
         <rect x="${badgeX}" y="${badgeY}" width="38" height="38" rx="10" fill="${col}"/>
         <text x="${badgeX + 19}" y="${badgeY + 20}" text-anchor="middle" dominant-baseline="central" font-family="${SYS}" font-weight="700" font-size="15" fill="#fff">${xmlEsc(stripPrefix(x.item.id))}</text>
         <text x="${textX}" y="${y + 26}" font-family="${SYS}" font-weight="700" font-size="16" fill="${ink}">${xmlEsc(x.item.title.toUpperCase())}</text>
-        <text x="${textX}" y="${y + 48}" font-family="${SYS}" font-size="12" fill="${mist}">${xmlEsc(x.item.id)} · value ${x.s.avgV.toFixed(1)} · effort ${x.s.avgE.toFixed(1)} · ${x.s.count} vote${x.s.count === 1 ? '' : 's'}</text>
+        <text x="${textX}" y="${y + 48}" font-family="${SYS}" font-size="12" fill="${mist}">${xmlEsc(x.item.id)} · avg value ${x.s.avgV.toFixed(1)} · ${x.s.count} vote${x.s.count === 1 ? '' : 's'}</text>
         <text x="${scoreX}" y="${y + 30}" text-anchor="end" font-family="${SYS}" font-weight="700" font-size="22" fill="${accent}">${x.s.score.toFixed(1)}</text>
         <text x="${scoreX}" y="${y + 48}" text-anchor="end" font-family="${SYS}" font-size="9" letter-spacing="1.5" fill="${mist}">SCORE</text>`;
     }).join('');
-
+ 
     const svgStr =
       `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">` +
       `<rect x="0" y="0" width="${W}" height="${H}" fill="${panel}"/>` +
@@ -263,7 +323,7 @@
       rightHeader +
       rowsSvg +
       `</svg>`;
-
+ 
     const img = new Image();
     const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgStr);
     img.onload = () => {
@@ -281,10 +341,10 @@
     img.onerror = () => alert('Could not render the results image.');
     img.src = url;
   }
-
+ 
   document.getElementById('csvBtn').addEventListener('click', exportCsv);
   document.getElementById('pngBtn').addEventListener('click', exportPng);
-
+ 
   // ====================== live ======================
   watchFeedback(render).catch(err => {
     document.getElementById('hmEmpty').textContent = 'Could not connect: ' + (err && err.message ? err.message : err);
@@ -292,3 +352,6 @@
 </script>
 </body>
 </html>
+ 
+Claude finished the response
+
