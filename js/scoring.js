@@ -17,7 +17,12 @@ export function rankItems(rows) {
   return rows
     .map((r) => ({ item: r.item, s: summarise(r.resp, r.item.effort) }))
     .filter((x) => x.s.count)
-    .sort((a, b) => b.s.score - a.s.score || b.s.count - a.s.count);
+    .sort((a, b) => {
+      const d = b.s.score - a.s.score;
+      if (Math.abs(d) > 1e-9) return d;                              // higher business value first
+      const e = (a.item.effort || 99) - (b.item.effort || 99);       // tie: lower effort first
+      return e || b.s.count - a.s.count;                             // then more votes
+    });
 }
 
 export function tallyField(responses, field) {
