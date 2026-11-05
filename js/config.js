@@ -61,7 +61,7 @@ export default {
     list: [
       { id: "UC01", category: "cat1", tag: "Use case", title: "Hunter, outbound agent",
         lead: "An agent that prospects and starts outbound conversations.", image: "img/uc01.png", effort: 4 },
-      { id: "UC02", category: "cat1", tag: "Use case", title: "Marie, marketing campaign agent",
+      { id: "UC02", category: "cat1", tag: "Use case", title: "Marketing campaign agent",
         lead: "An agent that runs marketing campaigns.", image: "img/uc02.png", effort: 1 },
       { id: "UC03", category: "cat1", tag: "Use case", title: "Piper, inbound agent",
         lead: "An agent that handles inbound leads and requests.", image: "img/uc03.png", effort: 1 },
