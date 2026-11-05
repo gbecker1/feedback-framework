@@ -110,6 +110,15 @@ function shape(raw) {
   return out;
 }
 
+// Delete ALL feedback (Firebase node + this browser's local copy).
+export async function resetAll() {
+  if (isConfigured) {
+    const database = await ensureDb();
+    await fb.remove(fb.ref(database, NODE));
+  }
+  try { localStorage.removeItem(LOCAL_KEY); } catch (e) {}
+}
+
 // Read every response once (results view / export). NEVER deletes anything.
 export async function getAllFeedback() {
   if (isConfigured) {
