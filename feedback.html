@@ -33,6 +33,7 @@
       </div>
       <h1 id="ucTitle"></h1>
       <p id="ucLead"></p>
+      <img id="ucShot" alt="" style="display:none;width:100%;border-radius:12px;margin:14px 0 4px;border:1px solid var(--line);cursor:zoom-in" />
     </div>
 
     <form class="form" id="form"></form>
@@ -89,6 +90,8 @@
     document.getElementById('ucChip').textContent = t.label;
     document.getElementById('ucTitle').textContent = uc.title;
     document.getElementById('ucLead').textContent = uc.lead || '';
+    const shot = document.getElementById('ucShot');
+    if (uc.image) { shot.src = uc.image; shot.alt = uc.title; shot.style.display = 'block'; shot.onclick = () => window.open(uc.image, '_blank'); }
     document.getElementById('thanksTitle').textContent = Q.copy.thanksTitle;
     document.getElementById('againBtn').textContent = Q.copy.rateAnother;
     document.getElementById('editBtn').textContent = Q.copy.changeAnswer;
