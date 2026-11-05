@@ -32,9 +32,11 @@
   <div class="res-grid">
     <!-- Heat map -->
     <div class="card-panel">
-      <h2>Average business value</h2>
+      <h2>Value × Effort heat map</h2>
       <div class="sub" id="heatSub">
-        Average score (1 to 5) per use case · n = number of votes
+        Bubble = use case · Size = number of votes<br>
+        Value = voted by the audience · Effort = set by us<br>
+        Top-right (high value + high effort today) = do first
       </div>
       <div id="heatHost"><div class="hm-empty" id="hmEmpty">Waiting for the first responses…</div></div>
     </div>
@@ -42,7 +44,7 @@
     <!-- Priority list -->
     <div class="card-panel">
       <h2>Priority ranking</h2>
-      <div class="sub">Ranked by average business value. Highest first.</div>
+      <div class="sub">Ranked by value × effort today. Highest first.</div>
       <div class="prio-list" id="prioList"></div>
     </div>
   </div>
@@ -80,28 +82,44 @@
     renderPriority(rows);
   }
 
-  // ---- bar chart: average value per use case ----
+  // ---- heat map (2×2 SVG bubble matrix) ----
   function renderHeatmap(rows) {
     const host = document.getElementById('heatHost');
-    if (!rows.some(r => r.resp.length)) { host.innerHTML = '<div class="hm-empty">Waiting for the first responses…</div>'; return; }
+    const rated = rows.filter(r => r.resp.length && summarise(r.resp, r.item.effort).count);
+    if (!rated.length) { host.innerHTML = '<div class="hm-empty">Waiting for the first responses…</div>'; return; }
     const max = cfg.questions.scaleMax;
-    const rowH = 34, W = 560, m = { l: 48, r: 70, t: 16, b: 34 };
-    const H = m.t + m.b + rows.length * rowH;
-    const px = (v) => m.l + (v / max) * (W - m.l - m.r);
-    let grid = '', bars = '';
-    for (let i = 0; i <= max; i++) {
-      grid += `<line x1="${px(i)}" y1="${m.t}" x2="${px(i)}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1"/>` +
-              `<text x="${px(i)}" y="${H-m.b+18}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" fill="var(--mist)">${i}</text>`;
-    }
-    rows.forEach((r, i) => {
-      const s = summarise(r.resp);
-      const y = m.t + i * rowH, col = categoryOf(r.item).solid;
-      const w = Math.max(0, px(s.avgV) - m.l);
-      bars += `<text x="${m.l-10}" y="${y+rowH/2}" text-anchor="end" dominant-baseline="central" font-family="${HEAD_FONT}" font-weight="700" font-size="14" fill="var(--ink)">${esc(stripPrefix(r.item.id))}</text>` +
-              (s.count ? `<rect x="${m.l}" y="${y+6}" width="${w.toFixed(1)}" height="${rowH-12}" rx="5" fill="${col}" fill-opacity="0.75"/>` : '') +
-              `<text x="${(s.count ? px(s.avgV) : m.l) + 8}" y="${y+rowH/2}" dominant-baseline="central" font-family="${HEAD_FONT}" font-size="13" font-weight="700" fill="var(--ink-soft)">${s.count ? s.avgV.toFixed(1) + '  (n=' + s.count + ')' : '–'}</text>`;
+    const W = 560, H = 460, m = { l: 64, r: 24, t: 24, b: 56 };
+    const px = (e) => m.l + (e - 1) / (max - 1) * (W - m.l - m.r);
+    const py = (v) => (H - m.b) - (v - 1) / (max - 1) * (H - m.t - m.b);
+    const midX = px((1 + max) / 2), midY = py((1 + max) / 2);
+
+    let bubbles = '', labels = '';
+    rated.forEach(r => {
+      const s = summarise(r.resp, r.item.effort);
+      const cx = px(s.avgE), cy = py(s.avgV);
+      const rad = 12 + Math.min(26, s.count * 4);
+      const col = categoryOf(r.item).solid;
+      bubbles += `<circle cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${rad}" fill="${col}" fill-opacity="0.32" stroke="${col}" stroke-width="2"/>`;
+      labels += `<text x="${cx.toFixed(1)}" y="${cy.toFixed(1)}" text-anchor="middle" dominant-baseline="central" font-family="${HEAD_FONT}, sans-serif" font-weight="700" font-size="14" fill="var(--ink)">${esc(stripPrefix(r.item.id))}</text>`;
     });
-    host.innerHTML = `<svg id="heatmap" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">${grid}${bars}</svg>`;
+
+    host.innerHTML = `
+      <svg id="heatmap" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">
+        <rect x="${midX}" y="${m.t}" width="${W-m.r-midX}" height="${midY-m.t}" fill="#35d6a4" fill-opacity="0.09"/>
+        <rect x="${m.l}" y="${m.t}" width="${midX-m.l}" height="${midY-m.t}" fill="#ffb020" fill-opacity="0.05"/>
+        <line x1="${m.l}" y1="${m.t}" x2="${m.l}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1"/>
+        <line x1="${m.l}" y1="${H-m.b}" x2="${W-m.r}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1"/>
+        <line x1="${midX}" y1="${m.t}" x2="${midX}" y2="${H-m.b}" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4"/>
+        <line x1="${m.l}" y1="${midY}" x2="${W-m.r}" y2="${midY}" stroke="var(--line)" stroke-width="1" stroke-dasharray="4 4"/>
+        <text x="${(midX+W-m.r)/2}" y="${m.t+16}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="#35d6a4" opacity="0.95">DO FIRST</text>
+        <text x="${(m.l+midX)/2}" y="${m.t+16}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="#ffb020" opacity="0.9">NICE TO HAVE</text>
+        <text x="${(m.l+midX)/2}" y="${H-m.b-8}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="var(--mist)">IGNORE</text>
+        <text x="${(midX+W-m.r)/2}" y="${H-m.b-8}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="12" font-weight="700" fill="var(--mist)">MAYBE</text>
+        <text x="${(m.l+W-m.r)/2}" y="${H-14}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="13" font-weight="700" fill="var(--ink-soft)">${esc((scaleX && scaleX.label || 'Effort today').toUpperCase())}  →</text>
+        <text x="18" y="${(m.t+H-m.b)/2}" text-anchor="middle" font-family="${HEAD_FONT}" font-size="13" font-weight="700" fill="var(--ink-soft)" transform="rotate(-90 18 ${(m.t+H-m.b)/2})">${esc((scaleY && scaleY.label || 'Value').toUpperCase())}  →</text>
+        ${bubbles}
+        ${labels}
+      </svg>`;
   }
 
   // ---- priority ranking ----
@@ -118,7 +136,7 @@
         <div class="snum" style="background:${categoryOf(x.item).grad}">${esc(stripPrefix(x.item.id))}</div>
         <div class="pbody">
           <h3>${esc(x.item.title)}</h3>
-          <div class="meta">${esc(x.item.id)} · avg value ${x.s.avgV.toFixed(1)} · <b>${x.s.count} vote${x.s.count === 1 ? '' : 's'}</b>${thin}</div>
+          <div class="meta">${esc(x.item.id)} · value ${x.s.avgV.toFixed(1)} · effort ${x.s.avgE.toFixed(1)} · <b>${x.s.count} vote${x.s.count === 1 ? '' : 's'}</b>${thin}</div>
         </div>
         <div class="score">${x.s.score.toFixed(1)}<small>SCORE</small></div>
       </div>`;
@@ -146,21 +164,22 @@
     const chipKeys = cfg.questions.chipGroups.map(g => g.key);
 
     let out = 'SUMMARY\n';
-    out += ['Id', 'Title', 'Category', 'Responses', 'Avg value',
+    out += ['Id', 'Title', 'Category', 'Responses', 'Avg value', 'Avg effort', 'Priority score',
             ...chipKeys.map(k => 'Top ' + k)].map(csvCell).join(',') + '\n';
     rows.forEach(({ item, resp }) => {
-      const s = summarise(resp);
+      const s = summarise(resp, item.effort);
       out += [item.id, item.title, categoryOf(item).label, s.count,
-              s.count ? s.avgV.toFixed(2) : '',
+              s.count ? s.avgV.toFixed(2) : '', s.count ? s.avgE.toFixed(2) : '',
+              s.count ? s.score.toFixed(2) : '',
               ...chipKeys.map(k => topList(resp, k))].map(csvCell).join(',') + '\n';
     });
 
     out += '\nRAW RESPONSES\n';
-    out += ['Id', 'Title', 'Value', ...chipKeys, 'Submitted'].map(csvCell).join(',') + '\n';
+    out += ['Id', 'Title', 'Value', 'Effort', ...chipKeys, 'Submitted'].map(csvCell).join(',') + '\n';
     rows.forEach(({ item, resp }) => {
       resp.forEach(r => {
         const when = r.submittedAt ? new Date(r.submittedAt).toISOString() : '';
-        out += [item.id, item.title, r.value || '',
+        out += [item.id, item.title, r.value || '', item.effort || '',
                 ...chipKeys.map(k => (r[k] || []).join('; ')), when].map(csvCell).join(',') + '\n';
       });
     });
@@ -208,15 +227,15 @@
 
     const leftHeader = `
       <rect x="${leftX}" y="${pad}" width="${leftW}" height="${panelH}" rx="18" fill="${panel}" stroke="${line}" stroke-width="1.5"/>
-      <text x="${leftX + pad}" y="${pad + 22}" font-family="${SYS}" font-weight="700" font-size="22" letter-spacing="1" fill="${ink}">AVERAGE BUSINESS VALUE</text>
-      <text x="${leftX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Average score (1 to 5) per use case</text>
-      <text x="${leftX + pad}" y="${pad + 70}" font-family="${SYS}" font-size="13" fill="${mist}">n = number of votes</text>
-`;
+      <text x="${leftX + pad}" y="${pad + 22}" font-family="${SYS}" font-weight="700" font-size="22" letter-spacing="1" fill="${ink}">VALUE × EFFORT HEAT MAP</text>
+      <text x="${leftX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Bubble = item</text>
+      <text x="${leftX + pad}" y="${pad + 70}" font-family="${SYS}" font-size="13" fill="${mist}">Size = number of responses</text>
+      <text x="${leftX + pad}" y="${pad + 90}" font-family="${SYS}" font-size="13" fill="${mist}">Top-right (high value + high effort today) = do first</text>`;
 
     const rightHeader = `
       <rect x="${rightX}" y="${pad}" width="${rightW}" height="${panelH}" rx="18" fill="${panel}" stroke="${line}" stroke-width="1.5"/>
       <text x="${rightX + pad}" y="${pad + 22}" font-family="${SYS}" font-weight="700" font-size="22" letter-spacing="1" fill="${ink}">PRIORITY RANKING</text>
-      <text x="${rightX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Ranked by average business value. Highest first.</text>`;
+      <text x="${rightX + pad}" y="${pad + 50}" font-family="${SYS}" font-size="13" fill="${mist}">Auto-ranked by value × effort today. Highest first.</text>`;
 
     const rowsSvg = ranked.map((x, i) => {
       const y = rowsTop + i * (rowH + rowGap);
@@ -232,7 +251,7 @@
         <rect x="${badgeX}" y="${badgeY}" width="38" height="38" rx="10" fill="${col}"/>
         <text x="${badgeX + 19}" y="${badgeY + 20}" text-anchor="middle" dominant-baseline="central" font-family="${SYS}" font-weight="700" font-size="15" fill="#fff">${xmlEsc(stripPrefix(x.item.id))}</text>
         <text x="${textX}" y="${y + 26}" font-family="${SYS}" font-weight="700" font-size="16" fill="${ink}">${xmlEsc(x.item.title.toUpperCase())}</text>
-        <text x="${textX}" y="${y + 48}" font-family="${SYS}" font-size="12" fill="${mist}">${xmlEsc(x.item.id)} · avg value ${x.s.avgV.toFixed(1)} · ${x.s.count} vote${x.s.count === 1 ? '' : 's'}</text>
+        <text x="${textX}" y="${y + 48}" font-family="${SYS}" font-size="12" fill="${mist}">${xmlEsc(x.item.id)} · value ${x.s.avgV.toFixed(1)} · effort ${x.s.avgE.toFixed(1)} · ${x.s.count} vote${x.s.count === 1 ? '' : 's'}</text>
         <text x="${scoreX}" y="${y + 30}" text-anchor="end" font-family="${SYS}" font-weight="700" font-size="22" fill="${accent}">${x.s.score.toFixed(1)}</text>
         <text x="${scoreX}" y="${y + 48}" text-anchor="end" font-family="${SYS}" font-size="9" letter-spacing="1.5" fill="${mist}">SCORE</text>`;
     }).join('');
