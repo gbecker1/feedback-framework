@@ -53,36 +53,36 @@ export default {
   },
 
   // ── 3. ITEMS (the 12 use cases people rate) ─────────────────────────────
-  // effort = HARDCODED effort score (1 to 5) for this use case, set by you (not collected).
+  // effort = HARDCODED effort to activate (1 = very easy, 5 = very hard), set by you, not collected.
   // image = screenshot shown on the form. Put the files in the img/ folder
   // (lowercase names, e.g. img/uc01.png). Leave "" for no image.
   items: {
     idPrefix: "UC",
     list: [
       { id: "UC01", category: "cat1", tag: "Use case", title: "Hunter, outbound agent",
-        lead: "An agent that prospects and starts outbound conversations.", image: "img/uc01.png", effort: 3 },
+        lead: "An agent that prospects and starts outbound conversations.", image: "img/uc01.png", effort: 4 },
       { id: "UC02", category: "cat1", tag: "Use case", title: "Marie, marketing campaign agent",
-        lead: "An agent that runs marketing campaigns.", image: "img/uc02.png", effort: 3 },
+        lead: "An agent that runs marketing campaigns.", image: "img/uc02.png", effort: 1 },
       { id: "UC03", category: "cat1", tag: "Use case", title: "Piper, inbound agent",
-        lead: "An agent that handles inbound leads and requests.", image: "img/uc03.png", effort: 3 },
+        lead: "An agent that handles inbound leads and requests.", image: "img/uc03.png", effort: 1 },
       { id: "UC04", category: "cat2", tag: "Use case", title: "Home page proactive agent",
         lead: "The home page proactively surfaces suggested actions.", image: "img/uc04.png", effort: 3 },
       { id: "UC05", category: "cat2", tag: "Use case", title: "Coworker",
-        lead: "A coworker agent that supports you in your daily sales work.", image: "img/uc05.png", effort: 3 },
+        lead: "A coworker agent that supports you in your daily sales work.", image: "img/uc05.png", effort: 1 },
       { id: "UC06", category: "cat2", tag: "Use case", title: "Momentum, onsite recording",
-        lead: "Record your on-site customer meeting and capture what was said.", image: "img/uc06.png", effort: 3 },
+        lead: "Record your on-site customer meeting and capture what was said.", image: "img/uc06.png", effort: 1 },
       { id: "UC07", category: "cat2", tag: "Use case", title: "Photo of paper brief",
-        lead: "Take a photo of a paper brief and have it captured.", image: "img/uc07.png", effort: 3 },
+        lead: "Take a photo of a paper brief and have it captured.", image: "img/uc07.png", effort: 2 },
       { id: "UC08", category: "cat2", tag: "Use case", title: "Voice visit report and opportunity update",
-        lead: "Dictate your visit report and the opportunity is updated for you.", image: "img/uc08.png", effort: 3 },
+        lead: "Dictate your visit report and the opportunity is updated for you.", image: "img/uc08.png", effort: 2 },
       { id: "UC09", category: "cat3", tag: "Use case", title: "Agentforce, suggest formula (A2A)",
         lead: "Agent-to-agent suggestion of a formula.", image: "img/uc09.png", effort: 3 },
       { id: "UC10", category: "cat3", tag: "Use case", title: "Portal Smart Bottle",
         lead: "Smart Bottle in the customer portal.", image: "img/uc10.png", effort: 3 },
       { id: "UC11", category: "cat3", tag: "Use case", title: "AF Operation",
-        lead: "Agentforce for operations.", image: "img/uc11.png", effort: 3 },
+        lead: "Agentforce for operations.", image: "img/uc11.png", effort: 5 },
       { id: "UC12", category: "cat4", tag: "Use case", title: "Headless, act on the command center",
-        lead: "Sales leaders see and act on their business from the command center.", image: "img/uc12.png", effort: 3 },
+        lead: "Sales leaders see and act on their business from the command center.", image: "img/uc12.png", effort: 1 },
     ],
   },
 
@@ -129,7 +129,7 @@ export default {
   },
 
   // ── 7. SCORING ──────────────────────────────────────────────────────────────
-  // Simple: priority score = average value × average effort.
+  // Priority ranking = average business value only (effort is shown on the heat map).
   scoring: {
     thinSample: 5,   // items with fewer than this many votes are flagged "thin sample"
   },
