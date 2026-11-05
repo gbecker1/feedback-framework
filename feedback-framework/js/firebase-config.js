@@ -10,15 +10,16 @@
 // ===========================================================================
 
 export const firebaseConfig = {
-  apiKey:            "REPLACE_ME",
-  authDomain:        "REPLACE_ME",
-  databaseURL:       "REPLACE_ME",
-  projectId:         "REPLACE_ME",
-  storageBucket:     "REPLACE_ME",
-  messagingSenderId: "REPLACE_ME",
-  appId:             "REPLACE_ME",
+  apiKey:            "AIzaSyCIJhakAxgja33_QQ-qSSx5i4W5g-17ffA",
+  authDomain:        "givaudan-feedback.firebaseapp.com",
+  databaseURL:       "https://givaudan-feedback-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "givaudan-feedback",
+  storageBucket:     "givaudan-feedback.firebasestorage.app",
+  messagingSenderId: "826272184007",
+  appId:             "1:826272184007:web:d750e3f3413438937530e2",
 };
 
 export const isConfigured = !Object.values(firebaseConfig).some(
   (v) => typeof v === "string" && v.includes("REPLACE_ME")
 );
+
