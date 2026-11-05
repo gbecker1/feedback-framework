@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Feedback Framework · Setup Guide</title>
+<style>
+  :root{
+    --bg:#10141c; --bg2:#151b25; --bg3:#1b2230; --line:rgba(255,255,255,.1);
+    --ink:#eef2f8; --soft:#c4ccd8; --mist:#8a95a6; --acc:#60a5fa; --acc2:#a78bfa;
+    --ok:#35d6a4; --warn:#ffb020;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:
+    radial-gradient(900px 500px at 90% -10%,rgba(96,130,246,.14),transparent 60%),
+    radial-gradient(820px 520px at 0% 110%,rgba(167,139,250,.12),transparent 58%),var(--bg);
+    color:var(--ink);line-height:1.6;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:860px;margin:0 auto;padding:48px 24px 90px}
+  header{margin-bottom:40px}
+  .eyebrow{font-size:12px;letter-spacing:3px;text-transform:uppercase;color:var(--acc);font-weight:700}
+  h1{font-size:40px;line-height:1.08;margin:8px 0 10px;letter-spacing:-.5px}
+  h1 .g{background:linear-gradient(120deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .lede{color:var(--soft);font-size:17px;max-width:640px}
+  h2{font-size:24px;margin:46px 0 6px;letter-spacing:-.3px;scroll-margin-top:20px}
+  .step h2::before{content:"Step " counter(step) " · ";counter-increment:step;color:var(--acc);font-size:17px;font-weight:700}
+  .steps{counter-reset:step}
+  h3{font-size:17px;margin:24px 0 6px}
+  p{margin:10px 0;color:var(--soft)}
+  ul,ol{margin:10px 0 10px 24px;color:var(--soft)}
+  li{margin:5px 0}
+  a{color:var(--acc)}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;background:var(--bg3);
+    border:1px solid var(--line);border-radius:5px;padding:1px 6px;color:#ffd9a8}
+  pre{position:relative;background:#0c0f16;border:1px solid var(--line);border-radius:12px;
+    padding:16px 16px;margin:14px 0;overflow:auto}
+  pre code{background:none;border:none;padding:0;color:#d7e0ef;font-size:13px;line-height:1.65;display:block;white-space:pre}
+  .copy{position:absolute;top:9px;right:9px;font:600 11px system-ui;color:var(--acc);background:var(--bg3);
+    border:1px solid var(--line);border-radius:7px;padding:5px 10px;cursor:pointer}
+  .copy:hover{color:#fff;border-color:var(--acc)}
+  .toc{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:18px 22px;margin:30px 0 10px}
+  .toc h3{margin:0 0 8px;font-size:13px;letter-spacing:1.5px;text-transform:uppercase;color:var(--mist)}
+  .toc ol{columns:2;margin:0 0 0 18px}
+  .toc a{text-decoration:none}
+  .callout{border-radius:12px;padding:14px 18px;margin:16px 0;border:1px solid}
+  .callout b{color:var(--ink)}
+  .warn{background:rgba(255,176,32,.09);border-color:rgba(255,176,32,.4)}
+  .warn .t{color:var(--warn);font-weight:700}
+  .tip{background:rgba(53,214,164,.08);border-color:rgba(53,214,164,.35)}
+  .tip .t{color:var(--ok);font-weight:700}
+  .card{background:var(--bg2);border:1px solid var(--line);border-radius:14px;padding:4px 22px 10px;margin:14px 0}
+  table{width:100%;border-collapse:collapse;margin:14px 0;font-size:14px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:top;color:var(--soft)}
+  th{color:var(--ink);font-size:12px;letter-spacing:.5px;text-transform:uppercase}
+  .flow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:var(--bg2);border:1px solid var(--line);
+    border-radius:14px;padding:18px;margin:18px 0;justify-content:center}
+  .node{background:var(--bg3);border:1px solid var(--line);border-radius:10px;padding:10px 14px;text-align:center;font-size:13px;min-width:120px}
+  .node .k{font-weight:700;color:var(--ink)}
+  .node .d{color:var(--mist);font-size:11px}
+  .arrow{color:var(--acc);font-size:22px}
+  footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--mist);font-size:13px}
+  @media(max-width:620px){.toc ol{columns:1}.flow{flex-direction:column}.arrow{transform:rotate(90deg)}h1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="eyebrow">Feedback Framework</div>
+  <h1>Set up your own <span class="g">live feedback</span> room</h1>
+  <p class="lede">A step-by-step guide to stand up an anonymous, phone-based audience-feedback
+  tool: attendees scan a QR per item and rate it; a projector shows a live Value × Effort heat
+  map and an auto-ranked priority list. About 20 minutes, all free-tier.</p>
+</header>
+
+<div class="toc">
+  <h3>Steps</h3>
+  <ol>
+    <li><a href="#s1">What this is</a></li>
+    <li><a href="#s2">Prerequisites</a></li>
+    <li><a href="#s3">Get the files</a></li>
+    <li><a href="#s4">Create a Firebase project</a></li>
+    <li><a href="#s5">Enable Realtime Database</a></li>
+    <li><a href="#s6">Set the database rules</a></li>
+    <li><a href="#s7">Paste your Firebase config</a></li>
+    <li><a href="#s8">Edit config.js</a></li>
+    <li><a href="#s9">Run it locally</a></li>
+    <li><a href="#s10">Deploy to GitHub Pages</a></li>
+    <li><a href="#s11">Make the QR codes</a></li>
+    <li><a href="#s12">Run the session</a></li>
+    <li><a href="#s13">Troubleshooting</a></li>
+  </ol>
+</div>
+
+<section id="s1">
+<h2>What this is</h2>
+<p>Three small screens, no server code of your own:</p>
+<div class="flow">
+  <div class="node"><div class="k">📱 Phones</div><div class="d">feedback.html?uc=…</div></div>
+  <div class="arrow">→</div>
+  <div class="node"><div class="k">☁️ Firebase</div><div class="d">Realtime Database</div></div>
+  <div class="arrow">→</div>
+  <div class="node"><div class="k">🖥️ Projector</div><div class="d">results.html</div></div>
+</div>
+<p>Phones write anonymous ratings into Firebase; the projector reads them live and draws the heat
+map + ranking. It's plain static files (HTML/JS/CSS) with <b>no build step</b>. If Firebase isn't
+configured yet, everything still runs in a local-preview mode that saves to the browser only — handy
+for trying it before you wire up the database.</p>
+</section>
+
+<section id="s2">
+<h2>Prerequisites</h2>
+<ul>
+  <li>A <b>Google account</b> (for Firebase — free).</li>
+  <li>A <b>GitHub account</b> (for free hosting via GitHub Pages). Optional if you host elsewhere.</li>
+  <li><b>Python 3</b> installed, to preview locally (<code>python3 --version</code>). Any static server works.</li>
+  <li>A modern browser. That's it — everything here is free-tier.</li>
+</ul>
+</section>
+
+<div class="steps">
+
+<section id="s3" class="step">
+<h2>Get the files</h2>
+<p>Copy the whole <code>feedback-framework</code> folder to your machine. Quick tour:</p>
+<table>
+  <tr><th>File</th><th>What it is</th></tr>
+  <tr><td><code>feedback.html</code></td><td>The mobile form (one item via <code>?uc=…</code>).</td></tr>
+  <tr><td><code>results.html</code></td><td>The projector view: heat map + ranking + export.</td></tr>
+  <tr><td><code>index.html</code></td><td>Redirects to results.html.</td></tr>
+  <tr><td><code>js/config.js</code></td><td><b>You edit this</b> — items, questions, branding, colours.</td></tr>
+  <tr><td><code>js/firebase-config.js</code></td><td><b>You edit this</b> — your Firebase keys.</td></tr>
+  <tr><td>everything else</td><td>Engine — leave it alone.</td></tr>
+</table>
+<div class="tip callout"><span class="t">The one rule:</span> you only ever edit
+<code>js/config.js</code> and <code>js/firebase-config.js</code>.</div>
+</section>
+
+<section id="s4" class="step">
+<h2>Create a Firebase project</h2>
+<ol>
+  <li>Go to <a href="https://console.firebase.google.com" target="_blank" rel="noopener">console.firebase.google.com</a> and sign in.</li>
+  <li>Click <b>Add project</b>, give it a name (e.g. <code>my-feedback</code>), <b>Continue</b>.</li>
+  <li>You can turn <b>off</b> Google Analytics — it's not needed. Click <b>Create project</b>.</li>
+</ol>
+</section>
+
+<section id="s5" class="step">
+<h2>Enable Realtime Database</h2>
+<ol>
+  <li>In the left menu: <b>Build → Realtime Database</b>.</li>
+  <li>Click <b>Create Database</b>.</li>
+  <li>Pick a <b>region</b> closest to your audience (e.g. <i>Belgium / europe-west1</i>). This gets
+      baked into your database URL — just remember which one you chose.</li>
+  <li>When asked, start in <b>locked mode</b> (we set the rules in the next step).</li>
+</ol>
+</section>
+
+<section id="s6" class="step">
+<h2>Set the database rules</h2>
+<p>Open the <b>Rules</b> tab of the Realtime Database and paste this, then click <b>Publish</b>:</p>
+<pre><button class="copy">Copy</button><code>{
+  "rules": {
+    "feedback": { ".read": true, ".write": true },
+    "$other":   { ".read": false, ".write": false }
+  }
+}</code></pre>
+<div class="warn callout"><span class="t">Security note:</span> this allows anyone with the link to
+read and write the <code>feedback</code> node. That's fine for a short, anonymous, throwaway
+feedback round — but <b>don't store anything sensitive</b>, and tighten or disable the rules after
+your event. For a time-boxed safeguard you can instead use
+<code>".write": "now &lt; 1735689600000"</code> (a Unix-ms expiry); if writes suddenly stop, an
+expired rule like this is the usual cause.</div>
+<p>The node name <code>feedback</code> must match <code>storage.dbNode</code> in your config
+(it already does by default).</p>
+</section>
+
+<section id="s7" class="step">
+<h2>Paste your Firebase config</h2>
+<ol>
+  <li>In Firebase: <b>Project settings</b> (gear icon) → <b>Your apps</b> → <b>Web</b> (<code>&lt;/&gt;</code>) → register an app (any nickname, no hosting needed).</li>
+  <li>Firebase shows a <code>firebaseConfig = { … }</code> snippet. Copy its values.</li>
+  <li>Open <code>js/firebase-config.js</code> and paste each value over the matching <code>REPLACE_ME</code>:</li>
+</ol>
+<pre><button class="copy">Copy</button><code>export const firebaseConfig = {
+  apiKey:            "AIza…",
+  authDomain:        "my-feedback.firebaseapp.com",
+  databaseURL:       "https://my-feedback-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "my-feedback",
+  storageBucket:     "my-feedback.appspot.com",
+  messagingSenderId: "123456789",
+  appId:             "1:123…:web:abc…",
+};</code></pre>
+<div class="tip callout"><span class="t">Good to know:</span> while <i>any</i> value still says
+<code>REPLACE_ME</code>, the app runs in <b>local-preview mode</b> (saves only in your browser).
+That's expected until you paste the real values — a yellow banner reminds you.</div>
+</section>
+
+<section id="s8" class="step">
+<h2>Edit <code>config.js</code></h2>
+<p>This is where you make it yours. Open <code>js/config.js</code> and edit these blocks:</p>
+
+<h3>Items — the things people rate</h3>
+<pre><button class="copy">Copy</button><code>items: {
+  idPrefix: "UC",            // the short badge strips this (UC01 → "01")
+  list: [
+    { id:"UC01", category:"cat1", tag:"Sales", title:"Automatic quote from an email",
+      lead:"An inbound request becomes a priced quote on its own." },
+    { id:"UC02", category:"cat2", tag:"Service", title:"Where is my order?",
+      lead:"The agent answers status / ETA / delivery questions." },
+    // add as many as you like — each gets its own QR link
+  ],
+},</code></pre>
+<p>Each item's <code>category</code> points at a key in <code>theme.categories</code> (that's what
+colours its bubble on the heat map).</p>
+
+<h3>Questions</h3>
+<p>Two 1–5 tap scales plus three chip multi-selects. Edit labels, hints and options freely. The
+"add your own" box is automatic.</p>
+<div class="warn callout"><span class="t">Keep these keys:</span> the two scales must stay keyed
+<code>value</code> and <code>effort</code> — the heat map plots value (up) against effort (right).</div>
+
+<h3>Branding &amp; colours</h3>
+<ul>
+  <li><code>brand.orgName</code> / <code>titleSuffix</code> — the wordmark and tab title.</li>
+  <li><code>brand.logoSvg</code> (inline SVG) or <code>brand.logoImg</code> (<code>"img/logo.png"</code>) — optional logos.</li>
+  <li><code>theme.palette</code> — your accent colours; <code>theme.gradient</code> — the headline gradient.</li>
+  <li><code>theme.categories</code> — one colour per item group.</li>
+</ul>
+
+<h3>Deploy URL (come back after Step 10)</h3>
+<pre><button class="copy">Copy</button><code>deploy: {
+  baseUrl: "https://YOURNAME.github.io/feedback-framework/",
+},</code></pre>
+</section>
+
+<section id="s9" class="step">
+<h2>Run it locally</h2>
+<p>You must serve it over <b>http</b> — opening the files directly (<code>file://</code>) breaks the
+JavaScript modules. From inside the folder:</p>
+<pre><button class="copy">Copy</button><code>cd feedback-framework
+python3 -m http.server 8000</code></pre>
+<p>Then open:</p>
+<ul>
+  <li><a href="http://localhost:8000/feedback.html?uc=UC01" target="_blank" rel="noopener">http://localhost:8000/feedback.html?uc=UC01</a> — a form</li>
+  <li><a href="http://localhost:8000/results.html" target="_blank" rel="noopener">http://localhost:8000/results.html</a> — the projector view</li>
+</ul>
+<p>Submit a few test votes, open the results in a second tab, and watch them appear. (Once Firebase
+is configured, two different devices sync live; before that it's per-browser only.)</p>
+</section>
+
+<section id="s10" class="step">
+<h2>Deploy to GitHub Pages</h2>
+<ol>
+  <li>Create a new repo on GitHub (e.g. <code>feedback-framework</code>).</li>
+  <li>Push the folder's contents:</li>
+</ol>
+<pre><button class="copy">Copy</button><code>cd feedback-framework
+git init
+git add .
+git commit -m "Feedback framework"
+git branch -M main
+git remote add origin https://github.com/YOURNAME/feedback-framework.git
+git push -u origin main</code></pre>
+<ol start="3">
+  <li>In the repo: <b>Settings → Pages</b> → <b>Deploy from a branch</b> → branch <code>main</code>, folder <code>/ (root)</code> → <b>Save</b>.</li>
+  <li>Wait ~1 minute, then your site is at <code>https://YOURNAME.github.io/feedback-framework/</code>.</li>
+  <li>Put that URL into <code>deploy.baseUrl</code> in <code>config.js</code>, commit and push again.</li>
+</ol>
+</section>
+
+<section id="s11" class="step">
+<h2>Make the QR codes</h2>
+<p>Each item has its own link in this shape:</p>
+<pre><button class="copy">Copy</button><code>https://YOURNAME.github.io/feedback-framework/feedback.html?uc=UC01
+https://YOURNAME.github.io/feedback-framework/feedback.html?uc=UC02
+…one per item id…</code></pre>
+<p>Turn each link into a QR code with any free generator (e.g.
+<a href="https://www.qr-code-generator.com" target="_blank" rel="noopener">qr-code-generator.com</a>,
+or your browser's built-in "Create QR code for this page"). Print one per item and place it at that
+station. Tip: also print the short URL under each code for anyone who can't scan.</p>
+<div class="tip callout"><span class="t">Test first:</span> open one QR link on your own phone and
+confirm the right item's form loads before you print the batch.</div>
+</section>
+
+<section id="s12" class="step">
+<h2>Run the session</h2>
+<ul>
+  <li>Open <code>results.html</code> full-screen on the projector.</li>
+  <li>As you present each item, attendees scan its QR and rate it on their phones.</li>
+  <li>The heat map and ranking update live. One vote per phone per item — re-scanning lets someone change their answer.</li>
+  <li>At the end, use <b>Download CSV</b> (all data) and <b>Results image</b> (a shareable PNG).</li>
+</ul>
+</section>
+
+<section id="s13" class="step">
+<h2>Troubleshooting</h2>
+<table>
+  <tr><th>Symptom</th><th>Likely cause → fix</th></tr>
+  <tr><td>Yellow "local preview" banner won't go away</td><td>A <code>REPLACE_ME</code> is still in <code>firebase-config.js</code>, or a typo in a value.</td></tr>
+  <tr><td>Votes not landing / "permission denied"</td><td>Rules not published; node name mismatch (rules say <code>feedback</code> but <code>storage.dbNode</code> differs); or wrong <code>databaseURL</code> region.</td></tr>
+  <tr><td>"Permission denied" that used to work</td><td>A time-limited rule expired — re-open the rules (Step 6).</td></tr>
+  <tr><td>Blank page / module or CORS errors</td><td>You opened it as <code>file://</code>. Use <code>python3 -m http.server</code> or the Pages URL.</td></tr>
+  <tr><td>Projector empty but phones say "sent"</td><td>The results tab was opened before Firebase was configured — reload it.</td></tr>
+  <tr><td>QR scans to a 404</td><td><code>deploy.baseUrl</code> is wrong or missing its trailing <code>/</code>, or the site isn't deployed yet.</td></tr>
+  <tr><td>Fonts/logo missing</td><td>Offline or the CDN is blocked — the app still works, it just falls back to system fonts.</td></tr>
+</table>
+</section>
+
+</div><!-- /steps -->
+
+<footer>
+  Feedback Framework · plain static site, no build step · Firebase Realtime Database + GitHub Pages.
+  You only ever edit <code>js/config.js</code> and <code>js/firebase-config.js</code>.
+</footer>
+</div>
+
+<script>
+  document.querySelectorAll('pre .copy').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const code=btn.parentElement.querySelector('code').innerText;
+      navigator.clipboard.writeText(code).then(()=>{
+        const o=btn.textContent;btn.textContent='Copied';setTimeout(()=>btn.textContent=o,1200);
+      });
+    });
+  });
+</script>
+</body>
+</html>
