@@ -6,6 +6,33 @@
 <title>Feedback</title>
 <script>try{var t=localStorage.getItem('feedback-theme');if(t==='light')document.documentElement.setAttribute('data-theme','light');}catch(e){}</script>
 <link rel="stylesheet" href="css/styles.css" />
+<style>
+  .ff-sub{color:var(--ink-soft,#a9b4c4);margin:4px 0 18px;font-size:15px}
+  .ff-cards{display:grid;gap:12px}
+  .ff-card{display:block;text-decoration:none;color:inherit;background:var(--steel-2,#151b25);border:1px solid var(--line,rgba(255,255,255,.1));border-radius:18px;padding:16px 18px;position:relative;overflow:hidden}
+  .ff-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--c)}
+  .ff-card .top{display:flex;justify-content:space-between;align-items:center;font-size:12px;letter-spacing:2px;color:var(--mist,#828e9f)}
+  .ff-card .dot{width:10px;height:10px;border-radius:50%;background:var(--c)}
+  .ff-card h3{margin:6px 0 4px;font-size:24px;color:var(--ink,#eef2f8)}
+  .ff-card p{margin:0 0 10px;font-size:14px;color:var(--ink-soft,#a9b4c4)}
+  .ff-card .prog{font-size:13px;font-weight:700;color:var(--c)}
+  .ff-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:14px}
+  .ff-nav a{color:var(--ink-soft,#a9b4c4);text-decoration:none}
+  .ff-chip{display:inline-block;padding:3px 10px;border-radius:99px;background:var(--c);color:#fff;font-size:12px;font-weight:700}
+  .ff-dots{display:flex;gap:6px;margin:0 0 14px}
+  .ff-dots i{flex:1;height:5px;border-radius:3px;background:var(--line,rgba(255,255,255,.12))}
+  .ff-dots i.on{background:var(--c)}
+  .ff-shot{width:100%;border-radius:14px;border:1px solid var(--line,rgba(255,255,255,.1));margin:4px 0 14px;display:block;cursor:zoom-in}
+  .ff-title{margin:0 0 6px}
+  .ff-lead{margin:0 0 16px;color:var(--ink-soft,#a9b4c4)}
+  .ff-actions{display:flex;gap:10px;margin-top:16px;align-items:center}
+  .ff-actions .btn-submit{flex:1}
+  .ff-ghost{background:none;border:1px solid var(--line,rgba(255,255,255,.18));color:var(--ink-soft,#a9b4c4);border-radius:12px;padding:12px 14px;font-size:14px;cursor:pointer}
+  .ff-done{text-align:center;padding:30px 6px}
+  .ff-done h2{margin:0 0 6px}
+  .ff-done .row{display:grid;gap:10px;margin-top:18px}
+  .ff-done a{display:block;text-decoration:none;text-align:center}
+</style>
 </head>
 <body>
 
@@ -15,226 +42,148 @@
   ⚠️ Local preview mode — answers are saved only in this browser (Firebase not configured yet).
 </div>
 
-<div class="wrap">
-
-  <!-- Item picker (shown when no ?uc= is given) -->
-  <div class="picker" id="picker" style="display:none">
-    <h2 id="pickerTitle">Give feedback</h2>
-    <p class="sub" id="pickerSub">Pick the item you want to rate.</p>
-    <div class="pick-list" id="pickList"></div>
-  </div>
-
-  <!-- Feedback form -->
-  <div id="formWrap" style="display:none">
-    <div class="uc-head">
-      <div class="uc-eyebrow">
-        <span class="uc-num" id="ucNum"></span>
-        <span class="uc-chip" id="ucChip"></span>
-      </div>
-      <h1 id="ucTitle"></h1>
-      <p id="ucLead"></p>
-      <img id="ucShot" alt="" style="display:none;width:100%;border-radius:12px;margin:14px 0 4px;border:1px solid var(--line);cursor:zoom-in" />
-    </div>
-
-    <form class="form" id="form"></form>
-
-    <!-- Thank-you -->
-    <div class="thanks" id="thanks">
-      <div class="big">🙌</div>
-      <h2 id="thanksTitle">Thanks!</h2>
-      <p id="thanksMsg"></p>
-      <div class="actions">
-        <a class="primary" id="againBtn" href="index.html">Rate another item</a>
-        <button type="button" id="editBtn">Change my answer</button>
-      </div>
-    </div>
-  </div>
-
-</div>
+<div class="wrap" id="app"></div>
 
 <script type="module">
   import cfg from "./js/config.js";
-  import { ITEMS, getItem, stripPrefix, categoryOf } from "./js/items.js";
+  import { ITEMS, CATEGORIES, stripPrefix } from "./js/items.js";
   import { saveResponse, getMyResponse, isConfigured } from "./js/db.js";
   import { initChrome } from "./js/theme.js";
 
-  initChrome({ home: "index.html" });
-
+  initChrome({ home: "feedback.html" });
   if (!isConfigured) document.getElementById('previewBanner').classList.add('show');
 
-  const Q = cfg.questions;
+  const Q = cfg.questions, S = Q.scales[0], MAX = Q.scaleMax;
+  const app = document.getElementById('app');
   const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const catKeys = Object.keys(CATEGORIES);
+  const itemsOf = (cat) => ITEMS.filter(i => i.category === cat);
+  const scored = {};   // itemId -> value already given by this phone
 
-  const params = new URLSearchParams(location.search);
-  const uc = getItem(params.get('uc'));
+  // Load what this phone already answered, then draw.
+  Promise.all(ITEMS.map(i => getMyResponse(i.id).then(r => { if (r && r.value) scored[i.id] = r.value; }).catch(() => {})))
+    .then(route);
+  window.addEventListener('hashchange', route);
+  route();
 
-  if (!uc) {
-    // ---------- No/invalid ?uc= → show the picker ----------
-    document.getElementById('picker').style.display = 'block';
-    document.getElementById('pickerTitle').textContent = Q.copy.pickerTitle;
-    document.getElementById('pickerSub').textContent = Q.copy.pickerSub;
-    document.getElementById('pickList').innerHTML = ITEMS.map(u => {
-      const t = categoryOf(u);
-      return `<a class="pick" href="feedback.html?uc=${encodeURIComponent(u.id)}" style="--pa:${t.solid};--pg:${t.grad}">
-        <span class="pn">${esc(stripPrefix(u.id))}</span>
-        <span class="pt"><h3>${esc(u.title)}</h3><span>${esc(t.label)}${u.tag ? ' · ' + esc(u.tag) : ''}</span></span>
-      </a>`;
-    }).join('');
-  } else {
-    // ---------- Render the form for this item ----------
-    const t = categoryOf(uc);
-    document.documentElement.style.setProperty('--acc', t.solid);
-    document.documentElement.style.setProperty('--acc-grad', t.grad);
-    document.getElementById('formWrap').style.display = 'block';
-    document.getElementById('ucNum').textContent = uc.id;
-    document.getElementById('ucChip').textContent = t.label;
-    document.getElementById('ucTitle').textContent = uc.title;
-    document.getElementById('ucLead').textContent = uc.lead || '';
-    const shot = document.getElementById('ucShot');
-    if (uc.image) { shot.src = uc.image; shot.alt = uc.title; shot.style.display = 'block'; shot.onclick = () => window.open(uc.image, '_blank'); }
-    document.getElementById('thanksTitle').textContent = Q.copy.thanksTitle;
-    document.getElementById('againBtn').textContent = Q.copy.rateAnother;
-    document.getElementById('editBtn').textContent = Q.copy.changeAnswer;
-    document.title = `${uc.id} · ${cfg.brand.titleSuffix}`;
+  function setAccent(cat) {
+    const c = CATEGORIES[cat] || {};
+    const root = document.documentElement.style;
+    root.setProperty('--acc', c.solid || '#3b82f6');
+    root.setProperty('--acc-grad', c.grad || c.solid || '#3b82f6');
+  }
 
-    // --- build the form from config ---
-    const scaleHtml = Q.scales.map(s => `
+  function route() {
+    const h = decodeURIComponent((location.hash || '').replace(/^#/, ''));
+    window.scrollTo(0, 0);
+    if (h.startsWith('done-') && CATEGORIES[h.slice(5)]) return viewDone(h.slice(5));
+    const it = ITEMS.find(i => i.id.toUpperCase() === h.toUpperCase());
+    if (it) return viewItem(it);
+    viewHome();
+  }
+
+  // ---------- 1. Home: the chapters ----------
+  function viewHome() {
+    setAccent(catKeys[0]);
+    app.innerHTML = `
+      <h2>${esc(Q.copy.pickerTitle)}</h2>
+      <p class="ff-sub">${esc(Q.copy.pickerSub)}</p>
+      <div class="ff-cards">` + catKeys.map((k, n) => {
+        const c = CATEGORIES[k], list = itemsOf(k);
+        const done = list.filter(i => scored[i.id]).length;
+        const first = list.find(i => !scored[i.id]) || list[0];
+        return `<a class="ff-card" style="--c:${c.solid}" href="#${esc(first.id)}">
+          <div class="top"><span>0${n + 1}</span><span class="dot"></span></div>
+          <h3>${esc(c.label)}</h3>
+          <p>${esc(c.blurb || '')}</p>
+          <div class="prog">${done} of ${list.length} scored${done === list.length ? ' ✓' : ''}</div>
+        </a>`;
+      }).join('') + `</div>`;
+  }
+
+  // ---------- 2. One use case ----------
+  function viewItem(it) {
+    const cat = it.category, c = CATEGORIES[cat], list = itemsOf(cat);
+    const idx = list.indexOf(it), last = idx === list.length - 1;
+    setAccent(cat);
+    document.title = `${it.title} · ${cfg.brand.titleSuffix}`;
+    let value = scored[it.id] || null;
+
+    app.innerHTML = `
+      <div class="ff-nav" style="--c:${c.solid}">
+        <a href="#">‹ Chapters</a>
+        <span><span class="ff-chip">${esc(c.label)}</span> &nbsp;${idx + 1} / ${list.length}</span>
+      </div>
+      <div class="ff-dots" style="--c:${c.solid}">${list.map((_, i) => `<i class="${i <= idx ? 'on' : ''}"></i>`).join('')}</div>
+      ${it.image ? `<img class="ff-shot" id="shot" src="${esc(it.image)}" alt="${esc(it.title)}" />` : ''}
+      <h1 class="ff-title">${esc(it.title)}</h1>
+      <p class="ff-lead">${esc(it.lead || '')}</p>
       <div class="section">
-        <div class="q">${esc(s.label)} ${s.required ? '<span class="req">*</span>' : ''}</div>
-        ${s.hint ? `<div class="hint">${s.hint}</div>` : ''}
-        <div class="scale" data-scale="${s.key}" role="radiogroup" aria-label="${esc(s.label)}">
-          ${Array.from({ length: Q.scaleMax }, (_, i) => `<button type="button" value="${i + 1}">${i + 1}</button>`).join('')}
+        <div class="q">${esc(S.label)} <span class="req">*</span></div>
+        ${S.hint ? `<div class="hint">${S.hint}</div>` : ''}
+        <div class="scale" id="scale" role="radiogroup" aria-label="${esc(S.label)}">
+          ${Array.from({ length: MAX }, (_, i) => `<button type="button" value="${i + 1}">${i + 1}</button>`).join('')}
         </div>
-        ${s.ends ? `<div class="scale-ends"><span>${esc(s.ends[0])}</span><span>${esc(s.ends[1])}</span></div>` : ''}
-      </div>`).join('');
-    const chipHtml = Q.chipGroups.map(g => `
-      <div class="section">
-        <div class="q">${esc(g.heading)}</div>
-        ${g.hint ? `<div class="hint">${esc(g.hint)}</div>` : ''}
-        <div class="chips" data-chips="${g.key}"></div>
-        <div class="add-row">
-          <input type="text" data-add="${g.key}" placeholder="${esc(g.addPlaceholder || 'Add your own…')}" />
-          <button type="button" class="btn-add" data-addbtn="${g.key}">+ Add</button>
-        </div>
-      </div>`).join('');
-    document.getElementById('form').innerHTML = scaleHtml + chipHtml + `
-      <div class="submit-bar">
-        <button type="submit" class="btn-submit" id="submitBtn" disabled>${esc(Q.copy.submit)}</button>
-        <div class="note"><span class="anon">${Q.copy.anonNote}</span> ${Q.copy.anonTail}</div>
-      </div>`;
+        ${S.ends ? `<div class="scale-ends"><span>${esc(S.ends[0])}</span><span>${esc(S.ends[1])}</span></div>` : ''}
+      </div>
+      <div class="ff-actions">
+        ${idx > 0 ? `<button type="button" class="ff-ghost" id="prev">‹ Back</button>` : ''}
+        <button type="button" class="btn-submit" id="next" disabled>${last ? 'Finish chapter' : 'Next ›'}</button>
+      </div>
+      <div class="ff-actions" style="justify-content:center;margin-top:8px">
+        <a href="#${last ? 'done-' + cat : esc(list[idx + 1].id)}" style="color:var(--mist,#828e9f);font-size:13px">Skip this one</a>
+      </div>
+      <div class="note" style="margin-top:14px;text-align:center"><span class="anon">${Q.copy.anonNote}</span> ${Q.copy.anonTail}</div>`;
 
-    const CHIP_SETS = {};
-    Q.chipGroups.forEach(g => { CHIP_SETS[g.key] = g.options || []; });
-    const requiredScales = Q.scales.filter(s => s.required).map(s => s.key);
-
-    // --- selection state ---
-    const state = {};
-    Q.scales.forEach(s => state[s.key] = null);
-    Q.chipGroups.forEach(g => state[g.key] = new Set());
-
-    const submitBtn = document.getElementById('submitBtn');
-    function refreshSubmit() { submitBtn.disabled = !requiredScales.every(k => state[k]); }
-
-    function addChip(field, label, { custom = false, selected = true } = {}) {
-      const val = String(label).trim();
-      if (!val) return;
-      const host = document.querySelector(`.chips[data-chips="${field}"]`);
-      const existing = [...host.querySelectorAll('.chip')].find(c => c.dataset.val.toLowerCase() === val.toLowerCase());
-      if (existing) { if (selected) { existing.classList.add('sel'); state[field].add(existing.dataset.val); } return; }
-      const chip = document.createElement('button');
-      chip.type = 'button';
-      chip.className = 'chip' + (selected ? ' sel' : '') + (custom ? ' custom' : '');
-      chip.dataset.val = val;
-      chip.innerHTML = esc(val) + (custom ? ' <span class="x" aria-label="remove">×</span>' : '');
-      host.appendChild(chip);
-      if (selected) state[field].add(val);
+    const shot = document.getElementById('shot');
+    if (shot) {
+      shot.onerror = () => { shot.style.display = 'none'; };
+      shot.onclick = () => window.open(it.image, '_blank');
     }
 
-    for (const key of Object.keys(CHIP_SETS)) {
-      CHIP_SETS[key].forEach(label => addChip(key, label, { custom: false, selected: false }));
+    const nextBtn = document.getElementById('next');
+    const scale = document.getElementById('scale');
+    function pick(v) {
+      value = v;
+      scale.querySelectorAll('button').forEach(b => b.classList.toggle('sel', Number(b.value) === v));
+      nextBtn.disabled = false;
     }
+    scale.querySelectorAll('button').forEach(b => b.addEventListener('click', () => pick(Number(b.value))));
+    if (value) pick(value);
 
-    document.querySelectorAll('.scale').forEach(scale => {
-      const field = scale.dataset.scale;
-      scale.querySelectorAll('button').forEach(btn => {
-        btn.addEventListener('click', () => {
-          scale.querySelectorAll('button').forEach(b => b.classList.remove('sel'));
-          btn.classList.add('sel');
-          state[field] = parseInt(btn.value, 10);
-          refreshSubmit();
-        });
-      });
-    });
+    const prev = document.getElementById('prev');
+    if (prev) prev.onclick = () => { location.hash = list[idx - 1].id; };
 
-    document.querySelectorAll('.chips').forEach(group => {
-      const field = group.dataset.chips;
-      group.addEventListener('click', (e) => {
-        const chip = e.target.closest('.chip');
-        if (!chip) return;
-        const v = chip.dataset.val;
-        if (e.target.classList.contains('x')) { state[field].delete(v); chip.remove(); return; }
-        if (state[field].has(v)) { state[field].delete(v); chip.classList.remove('sel'); }
-        else { state[field].add(v); chip.classList.add('sel'); }
-      });
-    });
-
-    function commitAdd(field) {
-      const inp = document.querySelector(`input[data-add="${field}"]`);
-      const raw = (inp.value || '').trim();
-      if (!raw) return;
-      raw.split(',').map(s => s.trim()).filter(Boolean).forEach(s => addChip(field, s, { custom: true, selected: true }));
-      inp.value = '';
-      inp.focus();
-    }
-    document.querySelectorAll('input[data-add]').forEach(inp => {
-      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); commitAdd(inp.dataset.add); } });
-    });
-    document.querySelectorAll('.btn-add').forEach(btn => {
-      btn.addEventListener('click', () => commitAdd(btn.dataset.addbtn));
-    });
-
-    // pre-fill if this browser already answered this item
-    getMyResponse(uc.id).then(prev => {
-      if (!prev) return;
-      Q.scales.forEach(s => {
-        if (prev[s.key]) { const b = document.querySelector(`.scale[data-scale="${s.key}"] button[value="${prev[s.key]}"]`); if (b) b.click(); }
-      });
-      Q.chipGroups.forEach(g => {
-        (prev[g.key] || []).forEach(val => {
-          const known = (CHIP_SETS[g.key] || []).some(l => l.toLowerCase() === String(val).toLowerCase());
-          addChip(g.key, val, { custom: !known, selected: true });
-        });
-      });
-    }).catch(() => {});
-
-    function collect(key) { commitAdd(key); return [...state[key]]; }
-
-    document.getElementById('form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      if (!requiredScales.every(k => state[k])) return;
-      submitBtn.disabled = true; submitBtn.textContent = Q.copy.sending;
-      const response = {};
-      Q.scales.forEach(s => response[s.key] = state[s.key]);
-      Q.chipGroups.forEach(g => response[g.key] = collect(g.key));
+    nextBtn.onclick = async () => {
+      if (!value) return;
+      nextBtn.disabled = true; nextBtn.textContent = Q.copy.sending;
       try {
-        const mode = await saveResponse(uc.id, response);
-        document.getElementById('thanksMsg').textContent = mode === 'local' ? Q.copy.thanksLocal : Q.copy.thanksLive;
-        document.getElementById('form').classList.add('hide');
-        document.getElementById('thanks').classList.add('show');
-        window.scrollTo(0, 0);
+        await saveResponse(it.id, { value });
+        scored[it.id] = value;
+        location.hash = last ? 'done-' + cat : list[idx + 1].id;
       } catch (err) {
-        submitBtn.disabled = false; submitBtn.textContent = Q.copy.submit;
+        nextBtn.disabled = false; nextBtn.textContent = last ? 'Finish chapter' : 'Next ›';
         alert('Sorry — could not send. ' + (err && err.message ? err.message : ''));
       }
-    });
+    };
+  }
 
-    document.getElementById('editBtn').addEventListener('click', () => {
-      document.getElementById('thanks').classList.remove('show');
-      document.getElementById('form').classList.remove('hide');
-      submitBtn.disabled = false; submitBtn.textContent = Q.copy.submit;
-      refreshSubmit();
-      window.scrollTo(0, 0);
-    });
+  // ---------- 3. Chapter finished ----------
+  function viewDone(cat) {
+    const c = CATEGORIES[cat], list = itemsOf(cat);
+    const done = list.filter(i => scored[i.id]).length;
+    const nextCat = catKeys.find(k => k !== cat && itemsOf(k).some(i => !scored[i.id]));
+    setAccent(cat);
+    app.innerHTML = `
+      <div class="ff-done" style="--c:${c.solid}">
+        <h2>${esc(c.label)} — done</h2>
+        <p class="ff-sub">${done} of ${list.length} use cases scored. ${esc(Q.copy.thanksLive)}</p>
+        <div class="row">
+          ${nextCat ? `<a class="btn-submit" style="background:${CATEGORIES[nextCat].solid}" href="#${esc(itemsOf(nextCat).find(i => !scored[i.id]).id)}">Next chapter: ${esc(CATEGORIES[nextCat].label)} ›</a>` : ''}
+          <a class="ff-ghost" href="#">Back to all chapters</a>
+          <a class="ff-ghost" href="#${esc(list[0].id)}">Review ${esc(c.label)} answers</a>
+        </div>
+      </div>`;
   }
 </script>
 </body>
