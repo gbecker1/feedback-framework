@@ -41,66 +41,65 @@ export default {
     // CATEGORIES group your items by colour. Each item's `category` points at a
     // key here. Add/remove categories freely — any number is fine.
     categories: {
-      cat1: { label: "Group A", solid: "#3b82f6", grad: "linear-gradient(135deg,#60a5fa,#3b82f6)" },
-      cat2: { label: "Group B", solid: "#8b5cf6", grad: "linear-gradient(135deg,#a78bfa,#7c3aed)" },
-      cat3: { label: "Group C", solid: "#06b6d4", grad: "linear-gradient(135deg,#22d3ee,#0891b2)" },
+      cat1: { label: "Use case", solid: "#3b82f6", grad: "linear-gradient(135deg,#60a5fa,#3b82f6)" },
     },
   },
 
-  // ── 3. ITEMS (the things people rate) ────────────────────────────────────
+  // ── 3. ITEMS (the 12 use cases people rate) ─────────────────────────────
+  // image = screenshot shown on the form. Put the files in the img/ folder
+  // (lowercase names, e.g. img/uc01.png). Leave "" for no image.
   items: {
-    idPrefix: "UC",   // stripped for the short badge shown on screen (UC01 → "01")
-    // Each item: id (unique), category (a key from theme.categories above),
-    // tag (short label), title, lead (one-line description on the form).
+    idPrefix: "UC",
     list: [
-      { id: "UC01", category: "cat1", tag: "Example",   title: "First idea",
-        lead: "A short, plain-language description of what this idea is." },
-      { id: "UC02", category: "cat1", tag: "Example",   title: "Second idea",
-        lead: "Describe each idea in one line — it shows on the phone form." },
-      { id: "UC03", category: "cat2", tag: "Example",   title: "Third idea",
-        lead: "Group B colours this one differently in the heat map." },
-      { id: "UC04", category: "cat3", tag: "Example",   title: "Fourth idea",
-        lead: "Add as many items as you like — the QR link is per item." },
+      { id: "UC01", category: "cat1", tag: "Use case", title: "Use case 1",
+        lead: "Short description of use case 1.", image: "img/uc01.png" },
+      { id: "UC02", category: "cat1", tag: "Use case", title: "Use case 2",
+        lead: "Short description of use case 2.", image: "img/uc02.png" },
+      { id: "UC03", category: "cat1", tag: "Use case", title: "Use case 3",
+        lead: "Short description of use case 3.", image: "img/uc03.png" },
+      { id: "UC04", category: "cat1", tag: "Use case", title: "Use case 4",
+        lead: "Short description of use case 4.", image: "img/uc04.png" },
+      { id: "UC05", category: "cat1", tag: "Use case", title: "Use case 5",
+        lead: "Short description of use case 5.", image: "img/uc05.png" },
+      { id: "UC06", category: "cat1", tag: "Use case", title: "Use case 6",
+        lead: "Short description of use case 6.", image: "img/uc06.png" },
+      { id: "UC07", category: "cat1", tag: "Use case", title: "Use case 7",
+        lead: "Short description of use case 7.", image: "img/uc07.png" },
+      { id: "UC08", category: "cat1", tag: "Use case", title: "Use case 8",
+        lead: "Short description of use case 8.", image: "img/uc08.png" },
+      { id: "UC09", category: "cat1", tag: "Use case", title: "Use case 9",
+        lead: "Short description of use case 9.", image: "img/uc09.png" },
+      { id: "UC10", category: "cat1", tag: "Use case", title: "Use case 10",
+        lead: "Short description of use case 10.", image: "img/uc10.png" },
+      { id: "UC11", category: "cat1", tag: "Use case", title: "Use case 11",
+        lead: "Short description of use case 11.", image: "img/uc11.png" },
+      { id: "UC12", category: "cat1", tag: "Use case", title: "Use case 12",
+        lead: "Short description of use case 12.", image: "img/uc12.png" },
     ],
   },
 
   // ── 4. QUESTIONS ──────────────────────────────────────────────────────────
-  // The form is generated from this. The two scales MUST keep the keys
-  // "value" and "effort" (the heat map plots value on the Y axis, effort on X).
+  // One question only: business value, 1 to 5. Key must stay "value".
   questions: {
     scaleMax: 5,
     scales: [
-      { key: "value",  label: "Business value for you", required: true,
-        hint: "If you had this, how valuable would it be?",
+      { key: "value",  label: "Business value", required: true,
+        hint: "How valuable would this use case be for you?",
         ends: ["Low value", "High value"] },
-      { key: "effort", label: "Effort today",           required: true,
-        hint: "How much effort does doing this take <b>today</b>, without it?",
-        ends: ["Little effort", "A lot of effort"] },
     ],
-    // Multi-select chip groups. Each has an "add your own" box automatically.
-    chipGroups: [
-      { key: "data",     heading: "Data needed",          hint: "Tap all that apply — add your own below.",
-        addPlaceholder: "Add your own…",
-        options: ["Option 1", "Option 2", "Option 3", "Option 4"] },
-      { key: "channels", heading: "Where do you want it?", hint: "Which channels? Tap all that apply.",
-        addPlaceholder: "Add your own channel…",
-        options: ["Mobile", "Web / desktop", "By phone / voice", "Email"] },
-      { key: "actions",  heading: "What should it do?",    hint: "What actions should it take?",
-        addPlaceholder: "Add your own action…",
-        options: ["Answer a question", "Create / update a record", "Summarise", "Notify someone"] },
-    ],
+    chipGroups: [],
     copy: {
-      submit:       "Send feedback",
+      submit:       "Send score",
       sending:      "Sending…",
       anonNote:     "Fully anonymous",
-      anonTail:     "— we never ask your name. Pick a value &amp; effort rating to send.",
+      anonTail:     "— we never ask your name. Pick a score from 1 to 5 to send.",
       thanksTitle:  "Thanks!",
-      thanksLive:   "Your feedback was captured anonymously.",
+      thanksLive:   "Your score was captured anonymously.",
       thanksLocal:  "Saved in this browser (local preview mode).",
-      rateAnother:  "Rate another item",
-      changeAnswer: "Change my answer",
-      pickerTitle:  "Give feedback",
-      pickerSub:    "Pick the item you want to rate.",
+      rateAnother:  "Rate another use case",
+      changeAnswer: "Change my score",
+      pickerTitle:  "Score a use case",
+      pickerSub:    "Pick the use case you want to rate.",
     },
   },
 
@@ -118,7 +117,7 @@ export default {
   // Where feedback.html is served. QR codes / links point at:
   //   <baseUrl>feedback.html?uc=<item id>      (keep the trailing slash)
   deploy: {
-    baseUrl: "https://github.com/gbecker1/feedback-framework",
+    baseUrl: "https://gbecker1.github.io/feedback-framework/",
   },
 
   // ── 7. SCORING ──────────────────────────────────────────────────────────────
