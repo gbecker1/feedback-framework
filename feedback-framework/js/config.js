@@ -118,7 +118,7 @@ export default {
   // Where feedback.html is served. QR codes / links point at:
   //   <baseUrl>feedback.html?uc=<item id>      (keep the trailing slash)
   deploy: {
-    baseUrl: "https://YOURNAME.github.io/feedback-framework/",
+    baseUrl: "https://github.com/gbecker1/feedback-framework",
   },
 
   // ── 7. SCORING ──────────────────────────────────────────────────────────────
