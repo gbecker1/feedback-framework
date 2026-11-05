@@ -24,6 +24,7 @@
     <div class="res-actions">
       <button type="button" id="csvBtn">⬇ Download CSV</button>
       <button type="button" id="pngBtn">⬇ Results image</button>
+      <button type="button" id="resetBtn" style="display:none;border-color:#ef4444;color:#f87171">🗑 Reset all data</button>
     </div>
   </div>
 
@@ -54,7 +55,7 @@
   import cfg from "./js/config.js";
   import { ITEMS, CATEGORIES, stripPrefix, categoryOf } from "./js/items.js";
   import { summarise, rankItems, tallyField } from "./js/scoring.js";
-  import { watchFeedback, getAllFeedback, isConfigured } from "./js/db.js";
+  import { watchFeedback, getAllFeedback, resetAll, isConfigured } from "./js/db.js";
   import { initChrome } from "./js/theme.js";
 
   initChrome({ home: "results.html" });
@@ -285,6 +286,18 @@
 
   document.getElementById('csvBtn').addEventListener('click', exportCsv);
   document.getElementById('pngBtn').addEventListener('click', exportPng);
+
+  // Reset button: only visible on results.html?admin=1 (so attendees never see it).
+  if (new URLSearchParams(location.search).get('admin') === '1') {
+    const rb = document.getElementById('resetBtn');
+    rb.style.display = '';
+    rb.addEventListener('click', async () => {
+      if (!confirm('Delete ALL collected scores? This cannot be undone.')) return;
+      if ((prompt('Type RESET to confirm') || '').trim().toUpperCase() !== 'RESET') return;
+      try { await resetAll(); alert('All data deleted.'); }
+      catch (err) { alert('Could not reset: ' + (err && err.message ? err.message : err)); }
+    });
+  }
 
   // ====================== live ======================
   watchFeedback(render).catch(err => {
