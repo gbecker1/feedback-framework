@@ -41,14 +41,14 @@ export default {
     // CATEGORIES group your items by colour. Each item's `category` points at a
     // key here. Add/remove categories freely — any number is fine.
     categories: {
+      cat4: { label: "Leaders",    blurb: "See and act from the command center, anywhere.",
+              solid: "#f59e0b", grad: "linear-gradient(135deg,#fbbf24,#d97706)" },
       cat1: { label: "Marketing",  blurb: "Finds, scores and warms every L&R brand.",
               solid: "#3b82f6", grad: "linear-gradient(135deg,#60a5fa,#3b82f6)" },
       cat2: { label: "Sales",      blurb: "Prepares the visit, captures it by voice and photo.",
               solid: "#8b5cf6", grad: "linear-gradient(135deg,#a78bfa,#7c3aed)" },
       cat3: { label: "Operations", blurb: "Back-office agents run the manual steps, brief to raw material.",
               solid: "#06b6d4", grad: "linear-gradient(135deg,#22d3ee,#0891b2)" },
-      cat4: { label: "Leaders",    blurb: "See and act from the command center, anywhere.",
-              solid: "#f59e0b", grad: "linear-gradient(135deg,#fbbf24,#d97706)" },
     },
   },
 
