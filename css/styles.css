@@ -11,23 +11,23 @@
   --ember:    #8b5cf6;  --ember-2:  #a78bfa;
   --magenta:  #06b6d4;  --magenta-2:#22d3ee;
 
-  --steel-0:  #0b0e13;
-  --steel-1:  #10141c;
-  --steel-2:  #151b25;
-  --steel-3:  #1b2230;
-  --line:     rgba(255,255,255,0.09);
+  --steel-0:  #2a0a24;
+  --steel-1:  #3a0d32;
+  --steel-2:  #4a1340;
+  --steel-3:  #571a4c;
+  --line:     rgba(255,255,255,0.10);
   --line-2:   rgba(255,255,255,0.05);
 
-  --ink:      #eef2f8;
-  --ink-soft: #c4ccd8;
-  --mist:     #828e9f;
+  --ink:      #fbf3f7;
+  --ink-soft: #e2c9d7;
+  --mist:     #a8899b;
 
   --ok:       #35d6a4;
   --wip:      #ffb020;
 
   --grad: linear-gradient(120deg, var(--molten-2) 0%, var(--ember) 52%, var(--magenta) 100%);
 
-  --topbar-bg: rgba(11,14,19,0.82);
+  --topbar-bg: rgba(58,13,50,0.82);
 
   /* fonts (overwritten at runtime from config.brand.fonts) */
   --font-heading: 'Oswald', sans-serif;
@@ -40,14 +40,14 @@
 
 html[data-theme="light"] {
   --steel-0: #ffffff;
-  --steel-1: #fbfcfe;
+  --steel-1: #fcf8f8;
   --steel-2: #ffffff;
   --steel-3: #ffffff;
-  --line:    #e6e9ee;
-  --line-2:  rgba(16,20,28,0.06);
-  --ink:      #16202e;
-  --ink-soft: #425063;
-  --mist:     #6b7789;
+  --line:    #eadfe2;
+  --line-2:  rgba(20,17,15,0.06);
+  --ink:      #14110f;
+  --ink-soft: #4a443d;
+  --mist:     #8a8279;
   --topbar-bg: rgba(255,255,255,0.9);
 }
 
@@ -56,8 +56,8 @@ html { scroll-behavior: smooth; }
 body {
   font-family: var(--font-body);
   background:
-    radial-gradient(900px 520px at 85% -8%, color-mix(in srgb, var(--molten) 14%, transparent), transparent 60%),
-    radial-gradient(820px 520px at 2% 108%, color-mix(in srgb, var(--magenta) 12%, transparent), transparent 58%),
+    radial-gradient(900px 520px at 85% -8%, color-mix(in srgb, var(--molten) 55%, transparent), transparent 62%),
+    radial-gradient(820px 520px at 2% 108%, color-mix(in srgb, var(--magenta) 45%, transparent), transparent 58%),
     var(--steel-1);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
